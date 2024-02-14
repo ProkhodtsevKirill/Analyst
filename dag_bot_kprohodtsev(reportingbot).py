@@ -1,4 +1,4 @@
-#импорт библиотек
+#Import libraries
 import pandahouse as ph
 import pandas as pd
 import numpy as np
@@ -13,7 +13,7 @@ from airflow.decorators import dag, task
 from airflow.operators.python import get_current_context
 
 
-#параметры подключения к CH
+#ClickHouse connection parameters
 connection = {
     'host': 'https://clickhouse.lab.karpov.courses',
     'password': 'dpo_python_2020',
@@ -22,16 +22,16 @@ connection = {
 }
 
 
-# Дефолтные параметры, которые прокидываются в таски
+#Default parameters that are passed into tasks
 default_args = {
     'owner': 'k-prohodtsev',
-    'depends_on_past': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5),
-    'start_date': datetime(2023, 12, 17),
+    'depends_on_past': False,                 #Dependence on past cycles
+    'retries': 2,                             #Set a number of tries in case something goes wrong with the first one.
+    'retry_delay': timedelta(minutes=5),      #Set time between new tries
+    'start_date': datetime(2023, 12, 17),     #Set the date of
 }
 
-# Отчет должен приходить ежедневно в 11:00
+#The report should arrive daily at 11:00
 schedule_interval = '0 11 * * *'
 
 
@@ -42,7 +42,7 @@ schedule_interval = '0 11 * * *'
 
 def dag_bot_by_kprohodtsev_test():
     
-    # вытаскиваем данные из feed_actions
+    #Extract data from feed_actions
     @task()
     def extract_fa():
         query_data = """
@@ -62,7 +62,7 @@ def dag_bot_by_kprohodtsev_test():
     
     
 
-    # создаем метрики и текст с ними
+    #Create metrics and text with them
     @task()
     def create_metrics(df_data):
         df_yesterday = df_data[df_data.date == df_data.date.max()]
@@ -79,7 +79,7 @@ def dag_bot_by_kprohodtsev_test():
     
     
     
-    # создаем граффики и кладем их в буффер
+    #Create graphs and put them into buffer
     @task()
     def graph(df_data, metric):
         sns.set_style("darkgrid")
@@ -88,9 +88,9 @@ def dag_bot_by_kprohodtsev_test():
         plt.title(f'{metric} за предыдущие 7 дней')
         pic.set(xlabel=None, ylabel=None)
 
-        buffer = io.BytesIO()                    #создали буффер куда будем сохранять граффики
-        plt.savefig(buffer, format='png')        #сохраняем наш граффик
-        buffer.seek(0)                           #передвинули курсор в начало файлового объекта
+        buffer = io.BytesIO()                    #created a buffer where we will save the graphs
+        plt.savefig(buffer, format='png')        #save the graph
+        buffer.seek(0)                           #moved the cursor to the beginning of the file object
 
         plt.clf()
         plt.close()
@@ -98,14 +98,15 @@ def dag_bot_by_kprohodtsev_test():
         return buffer
     
     
-    #параметры бота и чата, отправка изображений из буффера
+    #Set bot and chat parameters, sending images from buffer
     @task
     def send_message(text, photos):
         my_token = '6782704467:AAE1GY-vF9TlKYDAalS-UmsOxGMhA0rX7bo'
-        chat_id=-938659451                      #'ОТЧЕТЫ | KC Симулятор Аналитика'
+        chat_id=-938659451                      #the name of chat which we will send report 'ОТЧЕТЫ | KC Симулятор Аналитика'
         bot = telegram.Bot(token=my_token)  
-        # updates = bot.getUpdates() этим методом мы определили наш чат ид.
-        # print(updates[-1]) ....'chat': {'id': 355098206....  может быть с минусом, его тоже нужно брать
+        
+        # updates = bot.getUpdates()  by this method we define chat id
+        # print(updates[-1]) ....'chat': {'id': 355098206....  ID could contain -(minus) , so we should take it too
 
         bot.sendMessage(chat_id=chat_id, text=text)
         for photo in photos:
