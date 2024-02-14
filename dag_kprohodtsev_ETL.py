@@ -1,3 +1,4 @@
+#Import libraries
 from datetime import datetime, timedelta
 import pandas as pd
 from io import StringIO
@@ -8,7 +9,7 @@ from airflow.decorators import dag, task
 from airflow.operators.python import get_current_context
 
 
-#параметры подключения к CH
+#ClickHouse connection parameters
 connection = {
     'host': 'https://clickhouse.lab.karpov.courses',
     'password': 'dpo_python_2020',
@@ -18,7 +19,7 @@ connection = {
 
 
 
-# Дефолтные параметры, которые прокидываются в таски
+#Default parameters that are passed into tasks
 default_args = {
     'owner': 'k-prohodtsev',
     'depends_on_past': False,
@@ -27,7 +28,7 @@ default_args = {
     'start_date': datetime(2023, 12, 13),
 }
 
-# Интервал запуска DAG
+#Determine the starting time for our process
 schedule_interval = '0 23 * * *'
 
 
@@ -35,7 +36,7 @@ schedule_interval = '0 23 * * *'
 @dag(default_args=default_args, schedule_interval=schedule_interval, catchup=False)
 def dag_kprohodtsev_test():
 
-    # вытаскиваем данные из feed_actions
+    #extract data from feed_actions
     @task()
     def extract_fa():
         query_fa = """SELECT yesterday() as event_date, 
@@ -51,7 +52,7 @@ def dag_kprohodtsev_test():
         return df_fa
 
     
-    # вытаскиваем данные из message_actions
+    #extract data from message_actions
     @task()
     def extract_msg():
         query_msg = """select yesterday() as event_date,
@@ -75,7 +76,7 @@ def dag_kprohodtsev_test():
         
     
     
-    # объединяем message_actions и feed_actions
+    #merge message_actions и feed_actions
     @task
     def merge_tables(df_fa, df_msg):
         df_glbl = df_msg.merge(df_fa, how='outer', on= ['event_date', 'user_id', 'gender', 'age', 'os'])
@@ -83,7 +84,7 @@ def dag_kprohodtsev_test():
     
     
     
-    # делаем срез для OS
+    #Create compound table for Operating System
     @task
     def transfrom_os(df_glbl):
         os_srez = df_glbl.groupby(['event_date','os'],as_index=False)\
@@ -100,7 +101,7 @@ def dag_kprohodtsev_test():
         return os_srez
 
     
-    # делаем срез для GENDER
+    #Create compound table for Gender
     @task
     def transfrom_gender(df_glbl):
         gender_srez = df_glbl.groupby(['event_date','gender'],as_index=False)\
@@ -117,7 +118,7 @@ def dag_kprohodtsev_test():
         return gender_srez
 
     
-    # делаем срез для AGE
+    #Create compound table for AGE
     @task
     def transfrom_age(df_glbl):
         age_srez = df_glbl.groupby(['event_date','age'],as_index=False)\
@@ -135,7 +136,7 @@ def dag_kprohodtsev_test():
     
     
     
-    #объединяем все сразы и подготавливает к загрузке на СН
+    #Merge compound tables and prepare it to load back to ClickHouse
     @task
     def transform_union(os_srez, gender_srez, age_srez):
         df_all = pd.concat([os_srez, gender_srez, age_srez]).reset_index()
@@ -147,7 +148,7 @@ def dag_kprohodtsev_test():
 
     
     
-    # создаем таблицу kprohodtsev_L8_test и загружаем туда данные
+    # Create table 'kprohodtsev_L8_test' in CH and upload the data
     @task
     def load(df_all):
         connection_test = {'host': 'https://clickhouse.lab.karpov.courses',
