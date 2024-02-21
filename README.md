@@ -22,10 +22,9 @@ We will merge every compounded table and upload it back to the SQL server to cre
 
 I attempted to demonstrate the possibilities of data visualization in this instance. 
 I got the data by making a request to the SQL server and made some minor edits using Pandas.
+In my opinion, it is much quicker, easier, and more aesthetic to create dashboards using special tools such as SuperSet, Redash, Tableau, etc. 
 
+<img width="1485" alt="Dashboard" src="https://github.com/ProkhodtsevKirill/Analyst/assets/160003420/6925456b-6146-4155-8219-4770e45025ca">
 
 
 I want to thank karpov.courses for the excellent course and the provided data.
-
-
-<img width="1485" alt="Dashboard" src="https://github.com/ProkhodtsevKirill/Analyst/assets/160003420/6925456b-6146-4155-8219-4770e45025ca">
