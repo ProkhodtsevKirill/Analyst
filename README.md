@@ -26,3 +26,6 @@ I got the data by making a request to the SQL server and made some minor edits u
 
 
 I want to thank karpov.courses for the excellent course and the provided data.
+
+
+<img width="1485" alt="Dashboard" src="https://github.com/ProkhodtsevKirill/Analyst/assets/160003420/6925456b-6146-4155-8219-4770e45025ca">
